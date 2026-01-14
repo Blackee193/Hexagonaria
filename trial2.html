@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Orbital Cannon Survival</title>
+  <style>
+    body { margin:0; background:black; }
+    canvas { display:block; margin:0 auto; background:black; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Globals
+    let bullets = [];
+    let meteors = [];
+    let fireworks = [];
+    let laserActive = false;
+    let firing = false;
+    let fireCooldown = 0;
+    let score = 0;
+    let lives = 3;
+    let startTime = Date.now();
+    let gameOver = false;
+    let keys = {};
+
+    // Define columns every 100px
+    let columns = [];
+    for(let col=0; col<canvas.width; col+=100){
+      columns.push(col);
+    }
+
+    // Start cannon in middle column
+    let cannon = { colIndex: Math.floor(columns.length/2), y: canvas.height-60, radius: 30 };
+
+    // Key handling
+    window.addEventListener("keydown", e => { keys[e.code] = true; });
+    window.addEventListener("keyup", e => { keys[e.code] = false; });
+
+    // Spawn meteors in random column
+    function spawnMeteor(){
+      let colIndex = Math.floor(Math.random()*columns.length);
+      meteors.push({ 
+        colIndex: colIndex,
+        x: columns[colIndex],
+        y: 0,
+        dy: 2+Math.random()*2,
+        radius:20 
+      });
+    }
+    setInterval(spawnMeteor, 1000);
+
+    // Fireworks effect
+    function spawnFireworks(x,y){ fireworks.push({ x, y, radius:10, color:"yellow" }); }
+
+    // Update loop
+    function update(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Background deco: columns
+      ctx.strokeStyle = "rgba(0,255,255,0.2)";
+      ctx.lineWidth = 1;
+      columns.forEach(col=>{
+        ctx.beginPath();
+        ctx.moveTo(col,0);
+        ctx.lineTo(col,canvas.height);
+        ctx.stroke();
+      });
+
+      // Cannon movement constrained to columns
+      if(keys["ArrowLeft"] || keys["KeyA"]){
+        if(cannon.colIndex > 0) cannon.colIndex--;
+        keys["ArrowLeft"] = keys["KeyA"] = false; // move once per press
+      }
+      if(keys["ArrowRight"] || keys["KeyD"]){
+        if(cannon.colIndex < columns.length-1) cannon.colIndex++;
+        keys["ArrowRight"] = keys["KeyD"] = false;
+      }
+      cannon.x = columns[cannon.colIndex];
+
+      // Fire control (hold to shoot)
+      if(keys["Space"] || keys["KeyW"] || keys["ArrowUp"]){
+        firing = true;
+        laserActive = true;
+      } else {
+        firing = false;
+        laserActive = false;
+      }
+
+      if(firing){
+        fireCooldown--;
+        if(fireCooldown <= 0){
+          bullets.push({ x:cannon.x, y:cannon.y, dy:-8 });
+          fireCooldown = 10; // adjust fire rate
+        }
+      }
+
+      // Cannon aura gradient
+      let gradient = ctx.createRadialGradient(cannon.x, cannon.y, 10, cannon.x, cannon.y, cannon.radius);
+      if(lives >= 3){
+        gradient.addColorStop(0,"white"); gradient.addColorStop(0.5,"cyan"); gradient.addColorStop(1,"blue");
+      } else if(lives === 2){
+        gradient.addColorStop(0,"white"); gradient.addColorStop(0.5,"orange"); gradient.addColorStop(1,"red");
+      } else {
+        gradient.addColorStop(0,"white"); gradient.addColorStop(0.5,"darkred"); gradient.addColorStop(1,"black");
+      }
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(cannon.x, cannon.y, cannon.radius, 0, Math.PI*2);
+      ctx.fill();
+
+      // Visual laser beam
+      if (laserActive) {
+        const grad = ctx.createLinearGradient(cannon.x, cannon.y, cannon.x, 0);
+        grad.addColorStop(0,"rgba(0,255,255,0.95)");
+        grad.addColorStop(0.5,"rgba(0,150,255,0.6)");
+        grad.addColorStop(1,"rgba(0,80,255,0.25)");
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.moveTo(cannon.x, cannon.y);
+        ctx.lineTo(cannon.x, 0);
+        ctx.stroke();
+      }
+
+      // Bullets (invisible: no drawing, only collisions)
+      for(let i=bullets.length-1; i>=0; i--){
+        let b = bullets[i];
+        b.y += b.dy;
+        if(b.y < 0) bullets.splice(i,1);
+
+        // collision with meteors
+        meteors.forEach((m,j)=>{
+          let dx = m.x - b.x, dy = m.y - b.y;
+          if(Math.sqrt(dx*dx+dy*dy) < m.radius){
+            meteors.splice(j,1);
+            bullets.splice(i,1);
+            spawnFireworks(m.x,m.y);
+            score += 10;
+          }
+        });
+      }
+
+      // Meteors constrained to columns
+      meteors.forEach((m,i)=>{
+        m.y += m.dy;
+        m.x = columns[m.colIndex];
+        // Decorated meteor gradient
+        let g = ctx.createRadialGradient(m.x,m.y,5,m.x,m.y,m.radius);
+        g.addColorStop(0,"yellow");
+        g.addColorStop(0.5,"orange");
+        g.addColorStop(1,"red");
+        ctx.fillStyle=g;
+        ctx.beginPath();
+        ctx.arc(m.x,m.y,m.radius,0,Math.PI*2);
+        ctx.fill();
+
+        // collision with cannon
+        let dx = m.x - cannon.x, dy = m.y - cannon.y;
+        if(Math.sqrt(dx*dx+dy*dy) < m.radius + cannon.radius){
+          meteors.splice(i,1);
+          lives--;
+          if(lives <= 0) gameOver = true;
+        }
+      });
+
+      // Fireworks
+      fireworks.forEach((f,i)=>{
+        f.radius -= 0.5;
+        if(f.radius <= 0) fireworks.splice(i,1);
+        else {
+          ctx.fillStyle=f.color;
+          ctx.beginPath();
+          ctx.arc(f.x,f.y,f.radius,0,Math.PI*2);
+          ctx.fill();
+        }
+      });
+
+      // HUD
+      ctx.fillStyle="white";
+      ctx.font="20px Arial";
+      ctx.fillText("Lives: "+lives,10,30);
+      ctx.fillText("Score: "+score,10,60);
+
+      // Timer
+      let elapsed = (Date.now() - startTime)/1000;
+      let remaining = 90 - elapsed;
+      if(remaining <= 0){
+        gameOver = true;
+        remaining = 0;
+      }
+      ctx.fillText("Time: "+Math.floor(remaining)+"s",10,90);
+
+      if(!gameOver){
+        requestAnimationFrame(update);
+      } else {
+        ctx.fillStyle="lime";
+        ctx.font="40px Arial";
+        if(remaining <= 0){
+          ctx.fillText("YOU SURVIVED!", canvas.width/2-150, canvas.height/2);
+          setTimeout(()=>{ window.location.href="trial3.html"; },3000);
+        } else {
+          ctx.fillText("GAME OVER", canvas.width/2-100, canvas.height/2);
+        }
+      }
+    }
+
+    update();
+  </script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Final Gate</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: radial-gradient(ellipse at center, #0a0a2a 0%, #000000 100%);
+      font-family: 'Cinzel', serif;
+      color: #ffd700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .worthy-btn {
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      border: 4px solid #ffd700;
+      box-shadow: 0 0 40px #ffd700;
+      background: transparent;
+      color: #ffd700;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-shadow: 0 0 10px #ffd700;
+      animation: pulse 4s infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.7; }
+    }
+
+    .speech {
+      font-size: 22px;
+      max-width: 700px;
+      min-height: 60px;
+    }
+
+    .options {
+      margin-top: 20px;
+    }
+    .options button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: transparent;
+      border: 2px solid #ffd700;
+      color: #ffd700;
+      cursor: pointer;
+      text-shadow: 0 0 5px #ffd700;
+    }
+    .options button:hover {
+      background: #ffd700;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <button class="worthy-btn" id="worthyBtn">I am worthy</button>
+  <div class="speech" id="speech">The Final Gate awaits the worthy...</div>
+  <div class="options" id="options"></div>
+
+  <script>
+    const speechEl = document.getElementById("speech");
+    const optionsEl = document.getElementById("options");
+    const worthyBtn = document.getElementById("worthyBtn");
+
+    // Typewriter effect
+    function typeWriter(text, callback, speed=50) {
+      let i = 0;
+      speechEl.textContent = "";
+      const interval = setInterval(() => {
+        speechEl.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) {
+          clearInterval(interval);
+          if (callback) callback();
+        }
+      }, speed);
+    }
+
+    worthyBtn.addEventListener("click", () => {
+      worthyBtn.style.display = "none";
+      typeWriter("You dare to claim worthyness?", () => {
+        setTimeout(() => {
+          const lines = [
+            "You have reached the Final Gate...",
+            "Few have stood here before you.",
+            "The pantheon watches your every move.",
+            "Prove your worth, and transcend."
+          ];
+          let idx = 0;
+          function nextLine() {
+            if (idx < lines.length) {
+              typeWriter(lines[idx], () => {
+                idx++;
+                setTimeout(nextLine, 1500);
+              });
+            } else {
+              // Show first options
+              optionsEl.innerHTML = `
+                <button id="opt1">I will not deceive you, Master, I am worthy to compete in your trials and to pass this realm.</button>
+                <button id="opt2">Who cares?</button>
+              `;
+              document.getElementById("opt1").onclick = () => {
+                // Master speaks first
+                typeWriter("Then proceed, worthy one...", () => {
+                  setTimeout(() => {
+                    speechEl.textContent = "You: Yes Master";
+                    setTimeout(() => {
+                      window.location.replace("trials.html");
+                    }, 2000);
+                  }, 2000);
+                });
+              };
+              document.getElementById("opt2").onclick = () => {
+                typeWriter("Talk to me like that one more time, and face the consequences", () => {
+                  optionsEl.innerHTML = `
+                    <button id="opt3">Sorry Master. I will not compare with that attitude</button>
+                    <button id="opt4">Oh yea? What are you gonna do?</button>
+                  `;
+                  document.getElementById("opt3").onclick = () => {
+                    typeWriter("Then proceed, but beware...", () => {
+                      setTimeout(() => {
+                        speechEl.textContent = "You: Yes Master";
+                        setTimeout(() => {
+                          window.location.replace("trials.html");
+                        }, 2000);
+                      }, 2000);
+                    });
+                  };
+                  document.getElementById("opt4").onclick = () => {
+                    typeWriter("FOR THE POWER AND SANITY OF THIS REALM, I DECLARE YOU, RESTARTED!", () => {
+                      window.location.replace("index.html");
+                    });
+                  };
+                });
+              };
+            }
+          }
+          nextLine();
+        }, 3000);
+      }, 100); // slower typewriter for challenge line
+    });
+
+    // Back navigation guard
+    history.pushState(null, "", window.location.href);
+    window.onpopstate = () => {
+      history.go(1);
+    };
+  </script>
+</body>
+</html>

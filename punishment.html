@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Master’s Punishment Chamber</title>
+  <style>
+    body { background:#200; color:#eee; font-family:monospace; text-align:center; padding-top:50px; }
+    input { width:500px; padding:8px; background:#111; color:#eee; border:2px solid #555; }
+    #status { margin-top:20px; font-size:18px; }
+  </style>
+</head>
+<body>
+<h1>The Master declares: "Welcome to the Punishment Chamber"</h1> 
+<p>The Master hisses: "You are trapped. I watch your every move..."</p> 
+
+<div id="tauntBox" style="margin-top:20px; font-size:20px; color:#ff4d4d; text-shadow:0 0 10px #ff4d4d;">
+  The Master whispers: "Silence will not save you..."
+</div>
+
+<script>
+  const taunts = [
+    "The Master growls: 'You cannot escape the chamber.'",
+    "The Master laughs: 'The stars mock your weakness.'",
+    "The Master sneers: 'Mercy? You must earn it.'",
+    "The Master taunts: 'Every second here proves your failure.'",
+    "The Master roars: 'The cosmos bends, but you break.'",
+    // Taunt with embedded bait link
+    "The Master sneers: 'Wanna escape? You'll never. <a href=\"evenharsherpunishment.html\" style=\"color:#ff4d4d; text-decoration:underline; cursor:pointer;\">Click here</a>'"
+  ];
+
+  function randomTaunt() {
+    const line = taunts[Math.floor(Math.random() * taunts.length)];
+    document.getElementById("tauntBox").innerHTML = line; // innerHTML so link works
+  }
+
+  // Taunt every 15 seconds
+  setInterval(randomTaunt, 15000);
+</script>
+
+<h1>The Master commands: "Your Trial Continues"</h1>
+<p>The Master hisses: "Type <strong>Chargoggagoggmanchauggagoggchaubunagungamaugg</strong> 20 times if you dare to return to safety."</p>
+<input id="punishInput" type="text" placeholder="The Master demands the word...">
+<div id="status">The Master counts: Attempts 0 / 20</div>
+
+<script>
+history.pushState(null, "", window.location.href);
+window.onpopstate = () => { history.go(1); };
+
+let attempts = 0;
+let requiredAttempts = 20;
+const input = document.getElementById("punishInput");
+const status = document.getElementById("status");
+const target = "Chargoggagoggmanchauggagoggchaubunagungamaugg";
+
+// Disable paste
+input.addEventListener("paste", (e) => {
+  e.preventDefault();
+  alert("The Master snarls: 'No cheating! You must type it manually.'");
+});
+
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const val = input.value.trim();
+
+    // Mercy appeal trigger
+    if (val === "Wait Master, this is a mistake!") {
+      status.textContent = "The Master sneers: 'Oh yea? Prove it. Name me all four of your cats.'";
+      input.value = "";
+      return;
+    }
+
+    // Correct cat names
+    if (val === "Tigresa, Salem, Mimosa and Roma") {
+      status.textContent = "The Master relents: 'Oh, sorry Ian, go right through.'";
+      setTimeout(() => { window.location.href = "index.html"; }, 2000);
+      return;
+    }
+
+    // Wrong cat names → punishment doubled
+    if (status.textContent.includes("Name me all four of your cats.") && val !== "Tigresa, Salem, Mimosa and Roma") {
+      requiredAttempts = 40;
+      status.textContent = "The Master roars: 'Wrong! Now you must type it 40 times...'";
+      input.value = "";
+      return;
+    }
+
+    // Normal punishment typing
+    if (val === target) {
+      attempts++;
+      status.textContent = `The Master counts: Attempts ${attempts} / ${requiredAttempts}`;
+      input.value = "";
+      if (attempts >= requiredAttempts) {
+        status.textContent = "The Master sighs: 'You are free... for now.'";
+        setTimeout(() => { window.location.href = "index.html"; }, 2000);
+      }
+    } else {
+      status.textContent = "The Master laughs: 'Wrong word! Try again.'";
+      input.value = "";
+    }
+  }
+});
+</script>
+</body>
+</html>

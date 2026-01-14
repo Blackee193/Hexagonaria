@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>REAL Unleashed</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 200vh; /* makes page scrollable */
+      background: radial-gradient(circle at 20% 20%, gold, transparent),
+                  radial-gradient(circle at 80% 30%, red, transparent),
+                  radial-gradient(circle at 40% 70%, blue, transparent),
+                  radial-gradient(circle at 70% 80%, purple, transparent),
+                  #000;
+      color: #fff;
+      font-family: 'Cinzel Decorative', serif;
+      text-align: center;
+      padding: 50px;
+    }
+
+    /* PROTOCOL UNLEASHED styling */
+    .protocol {
+      font-size: 4em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      animation: flashColors 2s infinite;
+      text-shadow: 0 0 20px #fff, 0 0 40px #ff3333;
+    }
+    @keyframes flashColors {
+      0% { color: green; }
+      20% { color: cyan; }
+      40% { color: yellow; }
+      60% { color: pink; }
+      80% { color: white; }
+      100% { color: green; }
+    }
+
+    /* Odd/even bounce effect */
+    .odd {
+      display: inline-block;
+      animation: oddBounce 1s infinite;
+    }
+    .even {
+      display: inline-block;
+      animation: evenBounce 1s infinite;
+    }
+    @keyframes oddBounce {
+      0%, 100% { transform: translateY(-5px); }
+      50% { transform: translateY(5px); }
+    }
+    @keyframes evenBounce {
+      0%, 100% { transform: translateY(5px); }
+      50% { transform: translateY(-5px); }
+    }
+
+    /* SUCCESS wave effect */
+    .success {
+      font-size: 3em;
+      color: gold;
+      margin-top: 10px;
+      display: block;
+      text-shadow: 0 0 15px gold, 0 0 30px orange;
+    }
+    .success span {
+      display: inline-block;
+      animation: wave 1.5s infinite;
+    }
+    .success span:nth-child(1) { animation-delay: 0s; }
+    .success span:nth-child(2) { animation-delay: 0.1s; }
+    .success span:nth-child(3) { animation-delay: 0.2s; }
+    .success span:nth-child(4) { animation-delay: 0.3s; }
+    .success span:nth-child(5) { animation-delay: 0.4s; }
+    .success span:nth-child(6) { animation-delay: 0.5s; }
+    .success span:nth-child(7) { animation-delay: 0.6s; }
+    @keyframes wave {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Typewriter effect */
+    #typewriter {
+      margin-top: 40px;
+      font-size: 1.3em;
+      color: #fff;
+      text-shadow: 0 0 10px #ff3333;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      white-space: pre-line;
+      border: 2px solid #ff3333;
+      padding: 20px;
+      border-radius: 15px;
+      background: rgba(20, 0, 0, 0.85);
+      min-height: 120px;
+    }
+
+    /* Secrets area */
+    #secrets {
+      margin-top: 60px;
+      font-size: 1.2em;
+      color: #ffcc00;
+      text-align: left;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 20px;
+      border: 2px dashed #ffcc00;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+  <!-- PROTOCOL UNLEASHED -->
+  <div class="protocol">
+    <span class="odd">P</span><span class="even">R</span>
+    <span class="odd">O</span><span class="even">T</span>
+    <span class="odd">O</span><span class="even">C</span>
+    <span class="odd">O</span><span class="even">L</span>
+    &nbsp;
+    <span class="odd">U</span><span class="even">N</span>
+    <span class="odd">L</span><span class="even">E</span>
+    <span class="odd">A</span><span class="even">S</span>
+    <span class="odd">H</span><span class="even">E</span>
+    <span class="odd">D</span><span class="even">:</span>
+  </div>
+
+  <!-- SUCCESS directly under -->
+  <div class="success">
+    <span>S</span><span>U</span><span>C</span><span>C</span><span>E</span><span>S</span><span>S</span>
+  </div>
+
+  <!-- Typewriter intro -->
+  <div id="typewriter"></div>
+
+  <!-- Secrets area -->
+  <div id="secrets">
+    <h2>🗝️ Secrets & Plans</h2>
+    <p>Here Ian can write his ideas, new word concepts, and hidden lore expansions, and you can view them...</p>
+     <h1> I'm planning to do a sleepover at a friends house, I'm planning to have a LOT of fun there. And fine, I confess, there's secret codes for me to skip sections. </h1>
+  </div>
+
+  <script>
+    const text = "Welcome to the Database, here, you will see everything Ian's planning or has planned, feel yourself like in home";
+    let i = 0;
+    function typeWriter() {
+      if (i < text.length) {
+        document.getElementById("typewriter").textContent += text.charAt(i);
+        i++;
+        setTimeout(typeWriter, 50);
+      }
+    }
+    window.onload = typeWriter;
+  </script>
+</body>
+</html>

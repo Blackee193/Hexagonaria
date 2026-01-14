@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Secrets</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(270deg, #000000, #1a0033, #330066);
+      background-size: 600% 600%;
+      animation: gradientShift 20s ease infinite;
+      color: white;
+      overflow: hidden;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    h1 { margin-top: 50px; font-size: 48px; text-shadow: 0 0 15px #00ffcc; }
+    button {
+      margin-top: 20px; padding: 12px 24px; font-size: 18px;
+      background: black; color: white; border: 2px solid #00ffcc;
+      box-shadow: 0 0 10px #00ffcc; cursor: pointer; transition: 0.3s;
+    }
+    button:hover { background: #00ffcc; color: black; box-shadow: 0 0 20px #00ffcc; }
+    #codeSection, #protocolSection { display: none; margin-top: 30px; }
+    input { padding: 10px; font-size: 18px; margin-top: 10px; width: 300px; }
+    #hintButton {
+      position: absolute; top: 60px; left: 60px; padding: 10px 18px;
+      background: rgba(0,0,0,0.7); color: #00ffcc; border: 2px solid #00ffcc;
+      border-radius: 10px; box-shadow: 0 0 10px #00ffcc; cursor: pointer;
+      animation: moveAround 12s infinite linear; user-select: none;
+    }
+    #hintButton.revealed {
+      background: rgba(0, 255, 204, 0.15); color: #eafff4;
+      border-color: #00ffcc; box-shadow: 0 0 16px #00ffcc;
+    }
+    @keyframes moveAround {
+      0% { top: 60px; left: 60px; }
+      25% { top: 60px; left: 80%; }
+      50% { top: 80%; left: 80%; }
+      75% { top: 80%; left: 60px; }
+      100% { top: 60px; left: 60px; }
+    }
+    .status { margin-top: 10px; min-height: 24px; font-size: 14px; letter-spacing: 0.5px; }
+    .status.hint { color: #9cffd0; text-shadow: 0 0 8px rgba(156, 255, 208, 0.35); }
+    .status.error { color: #ff6b6b; text-shadow: 0 0 8px rgba(255, 107, 107, 0.35); }
+    .status.success { color: #9cffd0; text-shadow: 0 0 8px rgba(156, 255, 208, 0.35); }
+  </style>
+</head>
+<body>
+  <h1>Secrets</h1>
+  <button onclick="enterCode()">Enter?</button>
+
+  <div id="codeSection">
+    <p>Enter Code:</p>
+    <input type="text" id="codeInput" placeholder="Type the access phrase..." autocomplete="off" spellcheck="false">
+    <button onclick="checkCode()">Submit</button>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div id="protocolSection">
+    <button onclick="activateProtocol()">Activate Protocol UNLEASHED?</button>
+  </div>
+
+  <div id="hintButton" onclick="revealHintTrigger()">???</div>
+
+  <script>
+  const ACCESS_CODE = "Hexagonariaennanonakontinuumcontaennanonanonacontanonacta";
+  const HINT_TRIGGER = "Polygonaria";
+  let hintRevealed = false;
+  let wrongCount = 0;
+  let masterTriggered = false; // <-- added
+
+  function enterCode() {
+    document.getElementById("codeSection").style.display = "block";
+    document.getElementById("status").textContent = "";
+    setTimeout(() => document.getElementById("codeInput").focus(), 100);
+  }
+
+  function checkCode() {
+    const input = (document.getElementById("codeInput").value || "").trim();
+    const status = document.getElementById("status");
+
+    // Secret path
+    if (input === "Hello Master.") {
+      status.textContent = "Who are you?";
+      status.className = "status hint";
+      masterTriggered = true; // <-- added
+      return;
+    } else if (input === "I'm Ian Erik Kaled Agostinetto") {
+      status.textContent = "Oh Hello Mr President, step right to the trials.";
+      status.className = "status success";
+      setTimeout(() => { window.location.href = "trials.html"; }, 2000);
+      return;
+    }
+
+    // Hint trigger
+    if (input.toLowerCase() === HINT_TRIGGER.toLowerCase()) {
+      status.textContent = "Hint: A polygon with near‑infinite sides...";
+      status.className = "status hint";
+      return;
+    }
+
+    // Access code check
+    if (input === ACCESS_CODE) {
+      status.textContent = "Access Granted.";
+      status.className = "status success";
+      document.getElementById("protocolSection").style.display = "block";
+      return;
+    }
+
+    // Wrong input dialogues only if Master was triggered
+    if (masterTriggered) {
+      wrongCount++;
+      if (wrongCount === 1) {
+        status.textContent = "The Master frowns: 'That is not correct...'";
+      } else if (wrongCount === 2) {
+        status.textContent = "The Master shifts uneasily: 'You’re making me nervous...'";
+      } else if (wrongCount === 3) {
+        status.textContent = "The Master whispers: 'Stop... you shouldn’t be here...'";
+      } else if (wrongCount === 4) {
+        status.textContent = "The Master trembles: 'Please... don’t force me...'";
+      } else if (wrongCount === 5) {
+        status.textContent = "The Master panics: 'This is your last chance!'";
+        setTimeout(() => { window.location.href = "punishment.html"; }, 2000);
+      } else if (wrongCount >= 6) {
+        status.textContent = "HELP! SECURITYY";
+        setTimeout(() => { window.location.href = "punishment.html"; }, 1000);
+      }
+      status.className = "status error";
+    } else {
+      // Before Master is triggered, just reject simply
+      status.textContent = "Invalid input.";
+      status.className = "status error";
+    }
+  }
+
+  function activateProtocol() { window.location.href = "gate2.html"; }
+
+  function revealHintTrigger() {
+    const btn = document.getElementById("hintButton");
+    if (!hintRevealed) {
+      btn.textContent = HINT_TRIGGER;
+      btn.classList.add("revealed");
+      hintRevealed = true;
+    } else {
+      btn.textContent = "???";
+      btn.classList.remove("revealed");
+      hintRevealed = false;
+    }
+  }
+
+  history.pushState(null, "", window.location.href);
+  window.onpopstate = () => { history.go(1); };
+</script>

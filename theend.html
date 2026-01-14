@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Golden Ascension</title>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #111 0%, #000 100%);
+      color: #ffd700;
+      font-family: 'Cinzel Decorative', serif;
+      text-align: center;
+      padding: 50px;
+    }
+    h1 {
+      font-size: 3.5em;
+      text-shadow: 0 0 20px #ffcc00, 0 0 40px #ff9900, 0 0 80px #fff700;
+      margin-bottom: 40px;
+      animation: glowPulse 3s infinite;
+    }
+    @keyframes glowPulse {
+      0% { text-shadow: 0 0 20px #ffcc00; }
+      50% { text-shadow: 0 0 40px #ff9900, 0 0 80px #fff700; }
+      100% { text-shadow: 0 0 20px #ffcc00; }
+    }
+    button {
+      background: linear-gradient(135deg, #ffd700, #ff9900);
+      border: 2px solid #fff700;
+      padding: 15px 40px;
+      font-size: 1.5em;
+      font-family: 'Cinzel Decorative', serif;
+      cursor: pointer;
+      border-radius: 12px;
+      box-shadow: 0 0 25px #ffcc00;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    button:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 40px #fff700, 0 0 80px #ffcc00;
+    }
+    #dialogue {
+      margin-top: 50px;
+      font-size: 1.2em;
+      line-height: 1.6;
+      white-space: pre-line;
+      display: none;
+      text-shadow: 0 0 15px #ffcc00;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 2px solid #ffd700;
+      padding: 20px;
+      border-radius: 15px;
+      background: rgba(20, 20, 20, 0.8);
+      animation: fadeIn 2s forwards;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <h1>✨ Golden Ascension ✨</h1>
+  <button id="winBtn">¿I... Won?</button>
+  <div id="dialogue"></div>
+
+  <script>
+    const dialogueText = `Master: Yes, you did my child.
+Even though you thought, it was just a stupid thought, you never actually realized your true greatness. BECAUSE OF YOU. People started to believe in themselves, stopped making fun of those who actually tried, and look where you are now. Feeling good, or in other word, Eellogofusciouhipoppokunurious, no matter long or short term, look where you are, feeling great, a sense of low power. Thanks to you, you rewrote reality, a new titan to be feared of, a new titan to learn, something even indescriptible.
+
+Ian: Thank you for completing my Trials, whoever you are. I tried to make this as fun as possible for each and everyone of you. Thank you Master, for carrying me on to make Hexagonaria's public announcement possible. And you, User, thank you for carrying on these challenges.
+
+Master: With that said, welcome to the Database, user.`; 
+
+    function typeWriter(text, element, speed=50, onFinish) {
+      let i = 0;
+      function typing() {
+        if (i < text.length) {
+          element.textContent += text.charAt(i);
+          i++;
+          setTimeout(typing, speed);
+          element.scrollTop = element.scrollHeight;
+        } else {
+          onFinish?.(); // redirect when finished
+        }
+      }
+      typing();
+    }
+
+    document.getElementById("winBtn").addEventListener("click", () => {
+      const dialogueDiv = document.getElementById("dialogue");
+      const winBtn = document.getElementById("winBtn");
+
+      winBtn.style.display = "none";   // hide button
+      dialogueDiv.style.display = "block";
+      dialogueDiv.textContent = "";
+
+      // Start typewriter and redirect after completion
+      typeWriter(dialogueText, dialogueDiv, 50, () => {
+        window.location.href = "realunleashed.html";
+      });
+    });
+  </script>
+</body>
+</html>

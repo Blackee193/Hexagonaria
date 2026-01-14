@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Second Gate</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(270deg, #000000, #1a0033, #330066);
+      background-size: 600% 600%;
+      animation: gradientShift 20s ease infinite;
+      color: white;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1 {
+      margin-top: 60px;
+      font-size: 46px;
+      text-shadow: 0 0 18px #00ffcc;
+    }
+
+    .panel {
+      margin: 40px auto;
+      max-width: 500px;
+      padding: 20px;
+      background: rgba(0,0,0,0.7);
+      border: 2px solid #00ffcc;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,255,204,0.4);
+    }
+
+    input {
+      padding: 12px;
+      font-size: 18px;
+      width: 300px;
+      border-radius: 8px;
+      border: 1px solid #00ffcc;
+      background: rgba(0,0,0,0.6);
+      color: #eafff4;
+    }
+
+    button {
+      margin-top: 16px;
+      padding: 12px 24px;
+      font-size: 18px;
+      background: black;
+      color: white;
+      border: 2px solid #00ffcc;
+      box-shadow: 0 0 10px #00ffcc;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+    button:hover {
+      background: #00ffcc;
+      color: black;
+      box-shadow: 0 0 20px #00ffcc;
+    }
+
+    .status { margin-top: 12px; min-height: 24px; font-size: 14px; }
+
+    #hintButton2 {
+      position: absolute;
+      top: 80px;
+      left: 80px;
+      padding: 10px 18px;
+      background: rgba(0,0,0,0.7);
+      color: #ff6b6b;
+      border: 2px solid #ff6b6b;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ff6b6b;
+      cursor: pointer;
+      animation: roam 14s infinite linear;
+      z-index: 10;
+    }
+    @keyframes roam {
+      0%   { top: 80px; left: 80px; }
+      25%  { top: 80px; left: 75%; }
+      50%  { top: 78%; left: 75%; }
+      75%  { top: 78%; left: 80px; }
+      100% { top: 80px; left: 80px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Second Gate</h1>
+
+  <div class="panel">
+    <p>Enter Secondary Code:</p>
+    <input type="text" id="secondCode" placeholder="Type the access phrase...">
+    <div>
+      <button onclick="checkSecondCode()">Submit</button>
+      <button onclick="goBack()">Return to Gate 1</button>
+    </div>
+    <div id="status2" class="status"></div>
+  </div>
+
+  <!-- Moving mystery button -->
+  <button id="hintButton2" onclick="revealHintTrigger2()">???</button>
+
+  <script>
+    const ACCESS_CODE_2 = "Hexakosioihexekontahexaphobia";
+    const HINT_TRIGGER_2 = "BeastFear";
+    let hintRevealed2 = false;
+
+    function checkSecondCode() {
+      const input = document.getElementById("secondCode").value.trim();
+      const status = document.getElementById("status2");
+
+      if (input.toLowerCase() === HINT_TRIGGER_2.toLowerCase()) {
+        status.textContent = "Hint: It’s the dread tied to 666…";
+        status.style.color = "#9cffd0";
+        return;
+      }
+
+      if (input === ACCESS_CODE_2) {
+        status.textContent = "Access Granted.";
+        status.style.color = "#9cffd0";
+        setTimeout(() => { window.location.href = "unleashed.html"; }, 500);
+        return;
+      }
+
+      status.textContent = "Access Denied at Gate 2.";
+      status.style.color = "#ff6b6b";
+    }
+
+    function revealHintTrigger2() {
+      const btn = document.getElementById("hintButton2");
+      if (!hintRevealed2) {
+        btn.textContent = HINT_TRIGGER_2;
+        hintRevealed2 = true;
+      } else {
+        btn.textContent = "???";
+        hintRevealed2 = false;
+      }
+    }
+
+    function goBack() {
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

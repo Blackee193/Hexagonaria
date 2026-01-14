@@ -1,0 +1,104 @@
+<body style="background:#000; color:#eee; font-family:'Courier New', monospace; text-align:center; padding-top:50px;">
+  <h1 style="color:#ff0000; text-shadow:0 0 20px #ff0000; letter-spacing:3px;">
+    THE MASTER’S EVEN HARSER PUNISHMENT
+  </h1>
+
+  <div id="dialogue" style="color:#ff4d4d; font-size:22px; text-shadow:0 0 15px #ff0000; white-space:pre-line; margin-bottom:20px;">
+    <!-- Dialogue will appear here -->
+  </div>
+
+  <!-- Player response box -->
+  <input id="playerResponse" type="text" placeholder="Speak to the Master..." 
+    style="background:#111; color:#eee; border:2px solid #800; padding:8px; width:500px;">
+  <button id="sendBtn" style="background:#111; color:#ff4d4d; border:2px solid #800; padding:10px; font-size:16px; cursor:pointer;">
+    Respond
+  </button>
+
+  <textarea id="inputBox" rows="10" cols="80" 
+    placeholder="The Master DEMANDS the word..." 
+    style="background:#111; color:#ff4d4d; border:3px solid #800; font-size:16px; text-align:center; text-shadow:0 0 5px #f00; margin-top:20px;"
+    disabled></textarea>
+
+  <div id="progress" style="margin-top:20px; font-size:20px; color:#87cefa; text-shadow:0 0 10px #00f;"></div>
+
+  <script>
+    // Dialogue lines
+    const dialogueLines = [
+      "The Master bellows: BECAUSE. OF. YOU.",
+      "The cosmos are shattered, Geometry is broken, mortals mimic your greed.",
+      "The Master sneers: 'Do you understand the weight of your actions?'",
+      "The Master roars: 'Now, your punishment begins.'",
+      "Type Hexagonariaennanonakontinuumcontaennanonanonacontanonacta 15 times. Only then will I relent."
+    ];
+    let currentLine = 0;
+
+    function typeWriter(line, callback) {
+      let i = 0;
+      const dialogueDiv = document.getElementById("dialogue");
+      dialogueDiv.innerHTML = "";
+      function typing() {
+        if (i < line.length) {
+          dialogueDiv.innerHTML += line.charAt(i);
+          i++;
+          setTimeout(typing, 40);
+        } else if (callback) {
+          callback();
+        }
+      }
+      typing();
+    }
+
+    // Player responds to advance dialogue
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      const response = document.getElementById("playerResponse").value.trim();
+      if (!response) return;
+
+      // Master reacts to player response (simple mock)
+      document.getElementById("dialogue").textContent = "The Master scoffs: '" + response + "? Pathetic.'";
+
+      // Advance scripted line
+      if (currentLine < dialogueLines.length) {
+        setTimeout(() => {
+          typeWriter(dialogueLines[currentLine]);
+          currentLine++;
+          if (currentLine === dialogueLines.length) {
+            // Unlock textarea after final line
+            document.getElementById("inputBox").disabled = false;
+            document.getElementById("sendBtn").style.display = "none";
+            document.getElementById("playerResponse").style.display = "none";
+          }
+        }, 1500);
+      }
+      document.getElementById("playerResponse").value = "";
+    });
+
+    // Start with first line
+    typeWriter(dialogueLines[currentLine]);
+    currentLine++;
+
+    const target = "Hexagonariaennanonakontinuumcontaennanonanonacontanonacta";
+    let required = 15;
+    let count = 0;
+
+    const box = document.getElementById("inputBox");
+    const progress = document.getElementById("progress");
+
+    // Block copy/paste and add punishment
+    box.addEventListener("paste", (e) => {
+      e.preventDefault();
+      required += 5; // add 5 more required typings
+      alert("The Master roars: 'CHEATER! Now you must type it " + required + " times!'");
+    });
+
+    box.addEventListener("input", () => {
+      const lines = box.value.split(/\s+/).filter(w => w === target);
+      count = lines.length;
+      progress.textContent = `The Master counts: ${count} / ${required}`;
+
+      if(count >= required){
+        progress.textContent = "The Master relents: 'You may leave... but remember your greed.'";
+        localStorage.setItem("cosmosTrial","complete");
+      }
+    });
+  </script>
+</body>

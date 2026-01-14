@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Unleashed?</title>
+<style>
+  /* Base */
+  body {
+    margin:0;
+    text-align:center;
+    font-family:Arial,sans-serif;
+    background:linear-gradient(270deg,#000000,#1a0033,#330066);
+    background-size:600% 600%;
+    animation:gradientShift 20s ease infinite;
+    color:white;
+    min-height:100vh;
+    overflow:hidden;
+  }
+  @keyframes gradientShift {
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+  }
+  h1 {margin-top:28px;font-size:42px;text-shadow:0 0 15px #00ffcc;position:relative;z-index:5;}
+
+  /* Stars (behind content except red/yellow) */
+  .star {
+    position:absolute;
+    font-size:22px;
+    text-shadow:0 0 10px currentColor;
+    animation:twinkle 3s infinite;
+    user-select:none;
+  }
+  .star.white {color:#ffffff;z-index:1;pointer-events:none;}
+  .star.red {color:red;z-index:3;cursor:pointer;}
+  .star.yellow {color:yellow;z-index:3;cursor:pointer;display:none;}
+  @keyframes twinkle {0%,100%{opacity:1;}50%{opacity:0.35;}}
+
+  /* Star positions (edges, not blocking text) */
+  #starRed {top:12%;left:6%;}
+  #starYellow {top:14%;right:8%;}
+  #s1 {top:5%;left:80%;}
+  #s2 {top:9%;left:18%;}
+  #s3 {bottom:10%;left:15%;}
+  #s4 {bottom:14%;right:12%;}
+  #s5 {top:22%;right:5%;}
+  #s6 {bottom:6%;left:70%;}
+  #s7 {top:7%;right:30%;}
+  #s8 {bottom:18%;right:40%;}
+
+  /* Letters (visible, locked until red star) */
+  #titanWord {margin-top:24px;position:relative;z-index:5;}
+  #titanWord span {
+    display:inline-block;margin:0 8px;font-size:48px;font-weight:bold;
+    color:#ffffff; /* visible from start */
+    text-shadow:0 0 6px #333;
+    transition:transform 0.2s,color 0.3s;
+    animation:floatWave 2.2s ease-in-out infinite;
+    pointer-events:none; /* locked */
+  }
+  @keyframes floatWave {
+    0%{transform:translateY(0);}
+    25%{transform:translateY(-6px);}
+    50%{transform:translateY(0);}
+    75%{transform:translateY(6px);}
+    100%{transform:translateY(0);}
+  }
+  #titanWord span.active {
+    text-shadow:0 0 8px #00ffcc,0 0 16px #00ffcc,0 0 24px #00ffcc;
+    cursor:pointer;pointer-events:auto;
+  }
+  #titanWord span.active:hover {
+    color:#9cffd0;transform:scale(1.2);
+    text-shadow:0 0 12px #00ffcc,0 0 24px #00ffcc,0 0 36px #00ffcc;
+  }
+
+  /* Foreground blocks */
+  #statusPuzzle,#typewriter,#bigMessage,#trollButton,#huhMessage,#hintMessage,#secretsWrapper {position:relative;z-index:5;}
+  #statusPuzzle {margin-top:16px;font-size:18px;min-height:24px;color:#ffffff;}
+  #typewriter {margin-top:28px;font-size:20px;color:#00ff00;text-shadow:0 0 8px rgba(0,255,0,0.35);min-height:28px;}
+  #bigMessage {margin-top:32px;font-size:36px;color:#ff6b6b;text-shadow:0 0 12px #ff6b6b;display:none;}
+  #trollButton {margin-top:16px;padding:12px 24px;font-size:18px;background:black;color:white;border:2px solid #ff6b6b;border-radius:10px;box-shadow:0 0 10px #ff6b6b;cursor:pointer;display:none;}
+  #trollButton:hover {background:#ff6b6b;color:black;box-shadow:0 0 20px #ff6b6b;}
+  #huhMessage {margin-top:16px;font-size:22px;color:red;display:none;}
+  #hintMessage {margin-top:12px;font-size:20px;color:yellow;display:none;}
+
+  /* Secrets button */
+  #secretsWrapper {margin-top:28px;height:64px;}
+  #secretsButton {
+    padding:12px 24px;font-size:18px;background:#222;color:white;
+    border:2px solid #00ffcc;border-radius:10px;cursor:pointer;
+    position:relative;z-index:6;display:inline-block;
+  }
+  .secretHalf {
+    position:absolute;top:0;width:50%;height:44px;background:#222;
+    border:2px solid #00ffcc;color:white;border-radius:10px;
+    display:none;align-items:center;justify-content:center;font-size:16px;z-index:6;
+  }
+  #secretLeft {left:25%;}
+  #secretRight {left:50%;}
+  @keyframes fallLeft {0%{transform:rotate(0) translateY(0);opacity:1;}100%{transform:rotate(-60deg) translateY(200px);opacity:0;}}
+  @keyframes fallRight {0%{transform:rotate(0) translateY(0);opacity:1;}100%{transform:rotate(60deg) translateY(200px);opacity:0;}}
+
+  /* --- Add-ons (appended, not replacing) --- */
+
+  /* Constellation background */
+  body::before {
+    content:"";
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:url("https://www.transparenttextures.com/patterns/stardust.png");
+    animation: driftStars 60s linear infinite;
+    opacity:0.2;
+    z-index:0;
+  }
+  @keyframes driftStars {
+    from {background-position:0 0;}
+    to {background-position:1000px 1000px;}
+  }
+
+  /* Final gate animation overlay */
+  #gateAnimation {
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:rgba(0,0,0,0.8);
+    display:none;align-items:center;justify-content:center;
+    color:#00ffcc;font-size:48px;text-shadow:0 0 20px #00ffcc;
+    z-index:10;
+  }
+  @keyframes gateOpen {
+    0%{transform:scale(0.8);opacity:0;}
+    50%{transform:scale(1.1);opacity:1;}
+    100%{transform:scale(1);opacity:1;}
+  }
+
+  /* Star visibility override (non-destructive) */
+  .star { z-index:10; }
+</style>
+</head>
+<body>
+  <h1>Unleashed?</h1>
+
+  <!-- Stars -->
+  <span id="starRed" class="star red" onclick="unlockLetters()">★</span>
+  <span id="starYellow" class="star yellow" onclick="showHint()">★</span>
+  <span id="s1" class="star white">★</span><span id="s2" class="star white">★</span>
+  <span id="s3" class="star white">★</span><span id="s4" class="star white">★</span>
+  <span id="s5" class="star white">★</span><span id="s6" class="star white">★</span>
+  <span id="s7" class="star white">★</span><span id="s8" class="star white">★</span>
+
+  <!-- Letters -->
+  <div id="titanWord">
+    <span>H</span><span>E</span><span>X</span><span>A</span><span>G</span>
+    <span>O</span><span>N</span><span>A</span><span>R</span><span>I</span><span>A</span>
+  </div>
+
+  <div id="statusPuzzle"></div>
+  <div id="typewriter"></div>
+
+  <div id="bigMessage">But is this truly the end?</div>
+  <button id="trollButton" onclick="trollRedirect()">Go straight to Real Unleashed?</button>
+
+  <div id="huhMessage">Huh?</div>
+  <div id="hintMessage">A reversal is the key to success</div>
+
+  <!-- Secrets -->
+  <div id="secretsWrapper">
+    <button id="secretsButton" onclick="accessSecrets()">Access Secrets?</button>
+    <div id="secretLeft" class="secretHalf">Access</div>
+    <div id="secretRight" class="secretHalf">Secrets?</div>
+  </div>
+
+  <!-- Add-ons: gate overlay + audio -->
+  <div id="gateAnimation">✨ The Final Gate Opens... ✨</div>
+
+  <audio id="bgMusic" autoplay loop>
+    <source src="victory.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="betrayalMusic" loop>
+    <source src="betrayal.mp3" type="audio/mpeg">
+  </audio>
+
+<script>
+  // Backwards sequence
+  const correctSequence = ["A","I","R","A","N","O","G","A","X","E","H"];
+  let currentIndex = 0;
+  let bigMessageShown = false;
+  let secretClicks = 0;
+  let yellowShown = false;
+
+  // Extra twinkle for red star sometimes
+  setInterval(() => {
+    const red = document.getElementById("starRed");
+    red.style.opacity = Math.random() < 0.3 ? "0.4" : "1";
+  }, 2000);
+
+  function unlockLetters() {
+    document.querySelectorAll("#titanWord span").forEach(span => {
+      span.classList.add("active");
+      span.onclick = () => pressLetter(span.textContent);
+    });
+    document.getElementById("huhMessage").style.display = "block";
+  }
+
+  function showHint() {
+    document.getElementById("hintMessage").style.display = "block";
+  }
+
+  function pressLetter(letter) {
+    const status = document.getElementById("statusPuzzle");
+
+    // Reveal big message + troll button on first letter click
+    if (!bigMessageShown) {
+      document.getElementById("bigMessage").style.display = "block";
+      document.getElementById("trollButton").style.display = "inline-block";
+      bigMessageShown = true;
+    }
+
+    // Reveal yellow star only after a letter is clicked
+    if (!yellowShown) {
+      document.getElementById("starYellow").style.display = "inline";
+      yellowShown = true;
+    }
+
+    if (letter === correctSequence[currentIndex]) {
+      currentIndex++;
+      status.textContent = "Correct... (" + currentIndex + "/" + correctSequence.length + ")";
+      status.style.color = "#9cffd0";
+
+      if (currentIndex === correctSequence.length) {
+        status.textContent = "The sequence is complete. The Final Gate opens!";
+        setTimeout(() => { window.location.href = "finalgate.html"; }, 1000);
+      }
+    } else {
+      status.textContent = "The letters do not resonate. Start again.";
+      status.style.color = "#ff6b6b";
+      currentIndex = 0;
+    }
+  }
+
+  function trollRedirect() {
+    const btn = document.getElementById("trollButton");
+    btn.textContent = "No, you are too greedy";
+    setTimeout(() => { window.location.replace("index.html"); }, 1000);
+  }
+
+
+  // Typewriter lore (green)
+  const loreText = "The pantheon has been awakened...";
+  let i = 0;
+  function typeWriter() {
+    const el = document.getElementById("typewriter");
+    if (i < loreText.length) {
+      el.textContent += loreText.charAt(i);
+      i++;
+      setTimeout(typeWriter, 80);
+    }
+  }
+  window.addEventListener("load", typeWriter);
+
+  // Access Secrets button
+  function accessSecrets() {
+    const btn = document.getElementById("secretsButton");
+    const left = document.getElementById("secretLeft");
+    const right = document.getElementById("secretRight");
+    secretClicks++;
+
+    if (secretClicks === 1) {
+      btn.textContent = "Click 3 times to access";
+    } else if (secretClicks === 2) {
+      left.style.display = "flex";
+      right.style.display = "flex";
+      left.style.animation = "fallLeft 1.6s forwards";
+      right.style.animation = "fallRight 1.6s forwards";
+      btn.style.visibility = "hidden";
+    } else {
+      // stays broken
+      console.log("Secrets remain broken.");
+    }
+  }
+
+  /* --- Add-ons hooks (appended, not modifying your functions) --- */
+
+  // Switch music when red star is clicked (autoplay may be blocked until user gesture)
+  document.getElementById("starRed").addEventListener("click", () => {
+    const bg = document.getElementById("bgMusic");
+    const br = document.getElementById("betrayalMusic");
+    try { if (bg) bg.pause(); } catch(e){}
+    try { if (br) br.play(); } catch(e){}
+  });
+
+  // Show gate overlay when sequence completes (watch status text)
+  const statusEl = document.getElementById("statusPuzzle");
+  if (statusEl) {
+    const obs = new MutationObserver(() => {
+      if (statusEl.textContent.includes("The Final Gate opens")) {
+        const gate = document.getElementById("gateAnimation");
+        if (gate) {
+          gate.style.display = "flex";
+          gate.style.animation = "gateOpen 2s forwards";
+          setTimeout(() => { window.location.replace = "finalgate.html"; }, 1000);
+        }
+      }
+    });
+    obs.observe(statusEl, { childList: true, subtree: true, characterData: true });
+  }
+history.pushState(null, "", window.location.href);
+window.onpopstate = () => {
+  history.go(1); 
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Master of Trials</title>
+  <style>
+    body {
+      background:#0b1020;
+      color:#eee;
+      font-family:monospace;
+      text-align:center;
+      padding-top:50px;
+    }
+    button {
+      background:#222;
+      color:#eee;
+      border:2px solid #555;
+      padding:10px 20px;
+      border-radius:6px;
+      cursor:pointer;
+      margin:10px;
+    }
+    button:hover {
+      background:#333;
+      border-color:#888;
+    }
+    #dialog {
+      margin-top:20px;
+      font-size:20px;
+      font-weight:bold;
+      min-height:60px;
+    }
+  </style>
+</head>
+<body>
+  <h1>The Master of Trials</h1>
+  <div id="dialog"></div>
+  <div id="buttons">
+    <button onclick="chooseYes()">Yes</button>
+    <button onclick="chooseNo()">No</button>
+  </div>
+
+  <script>
+    let stage = 0;
+    const dialog = document.getElementById("dialog");
+    const buttons = document.getElementById("buttons");
+
+    // Typewriter effect
+    function typeWriter(text, callback) {
+      dialog.textContent = "";
+      let i = 0;
+      function typing() {
+        if (i < text.length) {
+          dialog.textContent += text.charAt(i);
+          i++;
+          setTimeout(typing, 50); // speed of typing
+        } else if (callback) {
+          callback();
+        }
+      }
+      typing();
+    }
+
+    // Random Master responses for "No"
+    const noResponses = [
+      "The Master scoffs: 'Cowardice suits you well.'",
+      "The Master sighs: 'Fine, run away then...'",
+      "The Master laughs: 'Trials aren’t for the faint of heart.'",
+      "The Master whispers: 'Go eat soup instead.'",
+      "The Master growls: 'No courage, no glory.'",
+      "The Master mocks: 'You sure? Trials are fun!'",
+      "The Master waves: 'Okay, bye 👋'"
+    ];
+
+    function chooseNo() {
+      const msg = noResponses[Math.floor(Math.random() * noResponses.length)];
+      typeWriter(msg, () => {
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
+      });
+    }
+
+    function chooseYes() {
+      stage++;
+      if(stage === 1) {
+        typeWriter("Are you sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="chooseYes()">Yes</button>
+            <button onclick="chooseNo()">No</button>
+          `;
+        });
+      } else if(stage === 2) {
+        typeWriter("Are you really sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="chooseYes()">Yes, I am</button>
+            <button onclick="chooseNo()">No...</button>
+          `;
+        });
+      } else if(stage === 3) {
+        typeWriter("Are you really really sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="chooseYes()">Yes, I am?</button>
+            <button onclick="chooseNo()">No</button>
+          `;
+        });
+      } else if(stage === 4) {
+        typeWriter("Are you really really really sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="chooseYes()">Yes, we done?</button>
+            <button onclick="chooseNo()">No</button>
+          `;
+        });
+      } else if(stage === 5) {
+        typeWriter("Are you really really really really sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="chooseYes()">Yeah, I guess...</button>
+            <button onclick="chooseNo()">No</button>
+          `;
+        });
+      } else if(stage === 6) {
+        typeWriter("Are you really really really really really sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="chooseYes()">God... Yes.</button>
+            <button onclick="chooseNo()">No</button>
+          `;
+        });
+      } else if(stage === 7) {
+        typeWriter("Are you really really really really really really sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="chooseYes()">God damn it... Yes.</button>
+            <button onclick="chooseNo()">No</button>
+          `;
+        });
+      } else if(stage === 8) {
+        typeWriter("Are you really really really really really really really sure?", () => {
+          buttons.innerHTML = `
+            <button onclick="finalYes()">JUST GIVE ME THE GODDAMN TRIALS!</button>
+          `;
+        });
+      }
+    }
+
+    function finalYes() {
+      typeWriter("Okay jeez, I was just joking.", () => {
+        setTimeout(() => {
+          window.location.href = "trial1.html";
+        }, 2000);
+      });
+    }
+
+    // Start with the first line
+    typeWriter("Do you want to proceed with the trials?");
+  </script>
+</body>
+</html>

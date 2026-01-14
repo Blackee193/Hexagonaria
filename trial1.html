@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trial of Geometry</title>
+  <style>
+    body { background:#000; color:#ffd700; font-family:'Cinzel',serif; text-align:center; padding-top:40px; }
+    .lock { display:flex; justify-content:center; gap:40px; margin:30px auto; }
+    .shape-wrap { display:flex; flex-direction:column; align-items:center; gap:8px; }
+    svg { width:160px; height:160px; cursor:pointer; transition:transform 0.4s ease; transform-origin:50% 50%; filter:drop-shadow(0 0 8px #ffd700); }
+    .label { font-size:18px; }
+    .message { margin-top:20px; font-size:22px; min-height:40px; }
+    .controls { margin-top:20px; }
+    .controls button { margin:10px; padding:10px 20px; font-size:18px; border:2px solid #ffd700; background:transparent; color:#ffd700; cursor:pointer; }
+    .codebar { margin-top:20px; font-size:28px; letter-spacing:20px; }
+    .digit { display:inline-block; width:30px; text-align:center; border-bottom:2px solid #ffd700; color:#ffd700; }
+    .green { color:lime; text-shadow:0 0 10px lime; }
+    .yellow { color:gold; text-shadow:0 0 10px gold; }
+    .red { color:red; text-shadow:0 0 10px red; }
+    .next { display:none; margin-top:24px; padding:10px 20px; font-size:20px; border:2px solid #ffd700; background:transparent; color:#ffd700; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <h1>Trial of Geometry</h1>
+  <p>Align the sacred nonagons to unlock the path...</p>
+
+  <div class="lock">
+    <div class="shape-wrap"><svg id="n1" viewBox="0 0 200 200"></svg><div class="label">Nonagon 1</div></div>
+    <div class="shape-wrap"><svg id="n2" viewBox="0 0 200 200"></svg><div class="label">Nonagon 2</div></div>
+    <div class="shape-wrap"><svg id="n3" viewBox="0 0 200 200"></svg><div class="label">Nonagon 3</div></div>
+  </div>
+
+  <div class="message" id="message">The lock awaits your touch...</div>
+  <div class="controls"><button id="resetBtn">Reset</button></div>
+
+  <div class="codebar" id="codebar">
+    <span class="digit" id="d1">?</span>
+    <span class="digit" id="d2">?</span>
+    <span class="digit" id="d3">?</span>
+  </div>
+
+  <button class="next" id="nextBtn">Go to "Cosmos Trial"</button>
+
+  <script>
+    const secret=[4,7,2]; // secret code
+
+    // Generate digits 1–9 without repeats
+    function shuffledDigits(){
+      const arr=[1,2,3,4,5,6,7,8,9];
+      for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+      }
+      return arr;
+    }
+
+    function drawNonagon(svg,nums){
+      const cx=100,cy=100,r=70;
+      const pts=[];
+      for(let i=0;i<9;i++){
+        const angle=-Math.PI/2+(2*Math.PI*i/9);
+        pts.push(`${cx+r*Math.cos(angle)},${cy+r*Math.sin(angle)}`);
+      }
+      const poly=document.createElementNS("http://www.w3.org/2000/svg","polygon");
+      poly.setAttribute("points",pts.join(" "));
+      poly.setAttribute("fill","none");
+      poly.setAttribute("stroke","#ffd700");
+      poly.setAttribute("stroke-width","3");
+      svg.appendChild(poly);
+
+      // Add numbers
+      for(let i=0;i<9;i++){
+        const angle=-Math.PI/2+(2*Math.PI*i/9);
+        const tx=cx+(r+20)*Math.cos(angle);
+        const ty=cy+(r+20)*Math.sin(angle);
+        const text=document.createElementNS("http://www.w3.org/2000/svg","text");
+        text.setAttribute("x",tx); text.setAttribute("y",ty);
+        text.setAttribute("fill","#ffd700"); text.setAttribute("font-size","16");
+        text.setAttribute("text-anchor","middle"); text.textContent=nums[i];
+        svg.appendChild(text);
+      }
+    }
+
+    const nums1=shuffledDigits(), nums2=shuffledDigits(), nums3=shuffledDigits();
+    drawNonagon(document.getElementById("n1"),nums1);
+    drawNonagon(document.getElementById("n2"),nums2);
+    drawNonagon(document.getElementById("n3"),nums3);
+
+    const rotations={n1:0,n2:0,n3:0};
+    const step=40;
+
+    function rotate(id,nums){
+      rotations[id]=(rotations[id]+step)%360;
+      document.getElementById(id).style.transform=`rotate(${rotations[id]}deg)`;
+      checkAlignment();
+    }
+
+    document.getElementById("n1").onclick=()=>rotate("n1",nums1);
+    document.getElementById("n2").onclick=()=>rotate("n2",nums2);
+    document.getElementById("n3").onclick=()=>rotate("n3",nums3);
+
+    function checkAlignment(){
+      const top1=nums1[Math.floor((rotations.n1/step)%9)];
+      const top2=nums2[Math.floor((rotations.n2/step)%9)];
+      const top3=nums3[Math.floor((rotations.n3/step)%9)];
+      const aligned=[top1,top2,top3];
+
+      aligned.forEach((val,i)=>{
+        const d=document.getElementById("d"+(i+1));
+        d.textContent=val; d.className="digit";
+        if(val===secret[i]) d.classList.add("green");
+        else if(secret.includes(val)) d.classList.add("yellow");
+        else d.classList.add("red");
+      });
+
+      if(JSON.stringify(aligned)===JSON.stringify(secret)){
+        document.getElementById("message").textContent="The lock yields... You are worthy.";
+        document.getElementById("nextBtn").style.display="inline-block";
+        // ✅ Save progress only when solved
+        localStorage.setItem("trial1","complete");
+      } else {
+        document.getElementById("message").textContent="The lock resists...";
+      }
+    }
+
+    document.getElementById("resetBtn").onclick=()=>{
+      rotations.n1=rotations.n2=rotations.n3=0;
+      document.getElementById("n1").style.transform="rotate(0deg)";
+      document.getElementById("n2").style.transform="rotate(0deg)";
+      document.getElementById("n3").style.transform="rotate(0deg)";
+      ["d1","d2","d3"].forEach(id=>{document.getElementById(id).textContent="?"; document.getElementById(id).className="digit";});
+      document.getElementById("message").textContent="The lock awaits your touch...";
+      document.getElementById("nextBtn").style.display="none";
+    };
+
+    // Redirect to trial2.html instead of trials.html
+    document.getElementById("nextBtn").onclick=()=>window.location.replace("trial2.html");
+  </script>
+</body>
+</html>

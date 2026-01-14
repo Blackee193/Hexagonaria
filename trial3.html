@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Trial 3 — Trial of Surgery</title>
+  <style>
+    body { margin:0; background:#000; color:#fff; font-family:Arial, sans-serif; }
+    .hud { position:fixed; top:10px; left:10px; z-index:10; }
+    .hud .row { margin-bottom:6px; }
+    .grid { display:flex; justify-content:center; gap:16px; margin-top:80px; }
+    .heart-wrap { position:relative; width:140px; height:140px; border:1px solid rgba(0,255,255,0.2); }
+    .heart-wrap.locked::after {
+      content:"LOCKED";
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.6); color:#ff6666; font-weight:bold; letter-spacing:1px;
+    }
+    .heart-wrap.revealed { border-color:#00ffff; }
+    .panel { width:800px; margin:20px auto; padding:12px; border:1px solid rgba(0,255,255,0.2); background:#0a0a0a; }
+    .typing { display:flex; align-items:center; gap:12px; }
+    .typing .label { min-width:140px; }
+    .typing input { flex:1; padding:8px; background:#111; border:1px solid #333; color:#0f0; font-size:16px; }
+    .timers { display:flex; gap:24px; margin-top:8px; font-size:14px; color:#ccc; }
+    .columns-bg { position:fixed; inset:0; pointer-events:none; z-index:0; }
+    .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.7); z-index:20; }
+    .overlay.show { display:flex; }
+    .choice { text-align:center; margin-top:12px; font-size:14px; color:#aaa; }
+    .cutscene { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:#000; z-index:30; color:#fff; }
+    .cutscene.show { display:flex; }
+    .cutscene .scene { text-align:center; }
+    .btns { display:flex; gap:8px; justify-content:center; margin-top:10px; }
+    .btns button { padding:6px 10px; background:#111; border:1px solid #444; color:#fff; cursor:pointer; }
+    .btns button:hover { border-color:#0ff; }
+  </style>
+</head>
+<body>
+  <!-- Background columns -->
+  <canvas id="bg" class="columns-bg"></canvas>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="row"><strong>Main timer:</strong> <span id="mainTimer">90.0s</span></div>
+    <div class="row"><strong>Lives:</strong> <span id="lives">2</span></div>
+    <div class="row"><strong>Phase:</strong> <span id="phase">Typing 1/5</span></div>
+  </div>
+
+  <!-- Hearts grid -->
+  <div class="grid" id="grid">
+    <div class="heart-wrap locked" data-index="0"><canvas width="140" height="140"></canvas></div>
+    <div class="heart-wrap locked" data-index="1"><canvas width="140" height="140"></canvas></div>
+    <div class="heart-wrap locked" data-index="2"><canvas width="140" height="140"></canvas></div>
+    <div class="heart-wrap locked" data-index="3"><canvas width="140" height="140"></canvas></div>
+    <div class="heart-wrap locked" data-index="4"><canvas width="140" height="140"></canvas></div>
+  </div>
+
+  <!-- Computer panel -->
+  <div class="panel">
+    <div class="typing">
+      <div class="label"><strong>Type term:</strong></div>
+      <div id="term" style="flex:1; color:#0ff;">—</div>
+    </div>
+    <div class="typing" style="margin-top:8px;">
+      <div class="label"><strong>Input:</strong></div>
+      <input id="input" type="text" autocomplete="off" placeholder="Type here…" />
+    </div>
+    <div class="timers">
+      <div><strong>External timer:</strong> <span id="extTimer">—</span></div>
+      <div><strong>Status:</strong> <span id="status">Awaiting phase…</span></div>
+    </div>
+    <div class="choice" id="choiceHint">Final 15s: click a heart or press 1–5 to choose the infected organ.</div>
+  </div>
+
+  <!-- Final selection overlay -->
+  <div class="overlay" id="finalOverlay">
+    <div>
+      <h2>Select the infected heart</h2>
+      <p>Only black spots confirm infection. Irregular rhythm is a red herring.</p>
+      <div class="btns">
+        <button data-pick="0">Heart 1</button>
+        <button data-pick="1">Heart 2</button>
+        <button data-pick="2">Heart 3</button>
+        <button data-pick="3">Heart 4</button>
+        <button data-pick="4">Heart 5</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cutscene -->
+  <div class="cutscene" id="cutscene">
+    <div class="scene">
+      <h2 id="cutsceneTitle">Transplant in progress…</h2>
+      <canvas id="sceneCanvas" width="600" height="300" style="background:#050505; border:1px solid #222;"></canvas>
+      <p id="cutsceneText" style="margin-top:10px; color:#ccc;">Preparing patient…</p>
+    </div>
+  </div>
+
+  <script>
+    // Background columns
+    const bg = document.getElementById('bg');
+    bg.width = window.innerWidth; bg.height = window.innerHeight;
+    const bgctx = bg.getContext('2d');
+    function drawColumns(){
+      bgctx.clearRect(0,0,bg.width,bg.height);
+      bgctx.strokeStyle = "rgba(0,255,255,0.12)";
+      bgctx.lineWidth = 1;
+      for(let col=0; col<bg.width; col+=100){
+        bgctx.beginPath();
+        bgctx.moveTo(col,0);
+        bgctx.lineTo(col,bg.height);
+        bgctx.stroke();
+      }
+    }
+    drawColumns();
+    window.addEventListener('resize', ()=>{ bg.width=window.innerWidth; bg.height=window.innerHeight; drawColumns(); });
+
+    // Hearts setup
+    const wraps = Array.from(document.querySelectorAll('.heart-wrap'));
+    const hearts = wraps.map(w=>{
+      const c = w.querySelector('canvas');
+      return { wrap:w, canvas:c, ctx:c.getContext('2d'), revealed:false, irregular:false, spots:false, beatPhase:Math.random()*Math.PI*2 };
+    });
+
+    // Randomly assign one heart with black spots (true infected), and one with irregular rhythm (red herring)
+    const infectedIndex = Math.floor(Math.random()*hearts.length);
+    let irregularIndex = Math.floor(Math.random()*hearts.length);
+    if(irregularIndex === infectedIndex) irregularIndex = (irregularIndex+1) % hearts.length;
+    hearts[infectedIndex].spots = true;
+    hearts[irregularIndex].irregular = true;
+
+    // Draw a heart (stylized) with pulse and optional irregular jitter + spots
+    function drawHeart(h, t){
+      const ctx = h.ctx;
+      const w = h.canvas.width, hgt = h.canvas.height;
+      ctx.clearRect(0,0,w,hgt);
+
+      // Pulse scale
+      const baseScale = 0.9;
+      const pulse = 0.08 * Math.sin(t*2 + h.beatPhase);
+      const irregularJitter = h.irregular ? (Math.random()*0.06 - 0.03) : 0;
+      const scale = baseScale + pulse + irregularJitter;
+
+      ctx.save();
+      ctx.translate(w/2, hgt/2);
+      ctx.scale(scale, scale);
+
+      // Heart shape path
+      ctx.beginPath();
+      // Simple heart using two arcs and a triangle-ish bottom
+      ctx.moveTo(0, -30);
+      ctx.bezierCurveTo(30, -60, 70, -20, 0, 40);
+      ctx.bezierCurveTo(-70, -20, -30, -60, 0, -30);
+
+      // Fill gradient
+      const grad = ctx.createRadialGradient(0,0,10,0,0,60);
+      grad.addColorStop(0, "#ff6b6b");
+      grad.addColorStop(0.5, "#ff3b3b");
+      grad.addColorStop(1, "#b30000");
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Outline
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = h.irregular ? "#ffcc00" : "#ff8888";
+      ctx.stroke();
+
+      // Spots if infected
+      if(h.spots){
+        ctx.fillStyle = "#111";
+        for(let i=0;i<6;i++){
+          const sx = (Math.random()*80 - 40);
+          const sy = (Math.random()*60 - 30);
+          ctx.beginPath();
+          ctx.arc(sx, sy, 3 + Math.random()*2, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // Animate hearts
+    let lastTime = performance.now();
+    function animateHearts(now){
+      const t = (now/1000);
+      hearts.forEach(h=>{
+        if(h.revealed) drawHeart(h, t);
+        else {
+          // dimmed placeholder
+          const ctx = h.ctx;
+          ctx.clearRect(0,0,h.canvas.width,h.canvas.height);
+          ctx.fillStyle = "rgba(255,255,255,0.05)";
+          ctx.fillRect(0,0,h.canvas.width,h.canvas.height);
+        }
+      });
+      requestAnimationFrame(animateHearts);
+    }
+    requestAnimationFrame(animateHearts);
+
+    // Timers and phases
+    const words = [
+      "Transplantation",
+      "Antixerophthalmic",
+      "Choledochectomy",
+      "Cholangiopancreatography",
+      "Cholangiocholecystocholedochectomy"
+    ];
+    const visibilityDurations = [5,7,9,11,15]; // seconds per revealed organ
+
+    let lives = 2;
+    let mainTimer = 90.0; // seconds
+    let mainRunning = true;
+    let currentPhase = 0; // 0..4 typing phases, then final analysis
+    let externalRunning = false;
+    let extRemaining = 0;
+    let revealedCount = 0;
+    let analysisPhase = false; // final 15s
+    let gameEnded = false;
+
+    const mainTimerEl = document.getElementById('mainTimer');
+    const livesEl = document.getElementById('lives');
+    const phaseEl = document.getElementById('phase');
+    const termEl = document.getElementById('term');
+    const inputEl = document.getElementById('input');
+    const extTimerEl = document.getElementById('extTimer');
+    const statusEl = document.getElementById('status');
+    const finalOverlay = document.getElementById('finalOverlay');
+    const cutscene = document.getElementById('cutscene');
+    const sceneCanvas = document.getElementById('sceneCanvas');
+    const sceneCtx = sceneCanvas.getContext('2d');
+    const cutsceneTitle = document.getElementById('cutsceneTitle');
+    const cutsceneText = document.getElementById('cutsceneText');
+
+    livesEl.textContent = lives;
+
+    function setPhaseLabel(){
+      if(!analysisPhase){
+        phaseEl.textContent = `Typing ${Math.min(currentPhase+1,5)}/5`;
+      } else {
+        phaseEl.textContent = "Final analysis";
+      }
+    }
+
+    function pauseMain(){ mainRunning = false; }
+    function resumeMain(){ mainRunning = true; }
+
+    function startExternalTimer(){
+      externalRunning = true;
+      extRemaining = 7.35;
+      extTimerEl.textContent = extRemaining.toFixed(2)+"s";
+      statusEl.textContent = "Typing challenge active";
+    }
+
+    function stopExternalTimer(){
+      externalRunning = false;
+      extTimerEl.textContent = "—";
+      statusEl.textContent = "Awaiting phase…";
+    }
+
+    function showWord(){
+      termEl.textContent = words[currentPhase];
+      inputEl.value = "";
+      inputEl.disabled = false;
+      inputEl.focus();
+    }
+
+    function lockAllHearts(){
+      hearts.forEach(h=>{
+        h.revealed = false;
+        h.wrap.classList.add('locked');
+        h.wrap.classList.remove('revealed');
+      });
+    }
+
+    function revealHeart(index, durationSec){
+      const h = hearts[index];
+      h.revealed = true;
+      h.wrap.classList.remove('locked');
+      h.wrap.classList.add('revealed');
+      // auto-hide after duration unless in final analysis
+      setTimeout(()=>{
+        if(!analysisPhase){
+          h.revealed = false;
+          h.wrap.classList.add('locked');
+          h.wrap.classList.remove('revealed');
+        }
+      }, durationSec*1000);
+    }
+
+    function beginTypingPhase(){
+      if(currentPhase >= 5 || gameEnded) return;
+      pauseMain();
+      setPhaseLabel();
+      showWord();
+      startExternalTimer();
+    }
+
+    function failTyping(){
+  lives--;
+  livesEl.textContent = lives;
+  statusEl.textContent = "Failed typing — life lost";
+  inputEl.disabled = true;
+
+  if(lives <= 0){
+    // Only end if both lives are gone
+    endGame(false);
+  } else {
+    stopExternalTimer();
+    resumeMain();
+  }
+}
+
+    function succeedTyping(){
+      statusEl.textContent = "Term accepted";
+      inputEl.disabled = true;
+      stopExternalTimer();
+      // Reveal next heart for its duration
+      if(revealedCount < hearts.length){
+        revealHeart(revealedCount, visibilityDurations[currentPhase]);
+        revealedCount++;
+      }
+      currentPhase++;
+      resumeMain();
+    }
+
+    // Main loop (50ms resolution for smoother external timer)
+    let lastTick = performance.now();
+    function loop(now){
+      if(gameEnded) return;
+      const dt = (now - lastTick)/1000;
+      lastTick = now;
+
+      // External typing timer
+      if(externalRunning){
+        extRemaining -= dt;
+        if(extRemaining < 0) extRemaining = 0;
+        extTimerEl.textContent = extRemaining.toFixed(2)+"s";
+        if(extRemaining <= 0){
+          stopExternalTimer();
+          failTyping();
+        }
+      }
+
+      // Main timer
+      if(mainRunning){
+        mainTimer -= dt;
+        if(mainTimer < 0) mainTimer = 0;
+        mainTimerEl.textContent = mainTimer.toFixed(1)+"s";
+
+        // Trigger typing phases at 0,15,30,45,60 seconds elapsed
+        const elapsed = 90 - mainTimer;
+        const phaseStarts = [0,15,30,45,60];
+        const nextPhaseIndex = currentPhase; // 0..4
+        if(!externalRunning && !analysisPhase && nextPhaseIndex < 5){
+          if(elapsed >= phaseStarts[nextPhaseIndex] && elapsed < phaseStarts[nextPhaseIndex]+0.5){
+            beginTypingPhase();
+          }
+        }
+
+        // Enter final analysis at 75s elapsed
+        if(!analysisPhase && elapsed >= 75){
+          analysisPhase = true;
+          setPhaseLabel();
+          // Reveal all hearts for final 15s
+          hearts.forEach(h=>{
+            h.revealed = true;
+            h.wrap.classList.remove('locked');
+            h.wrap.classList.add('revealed');
+          });
+        }
+
+        // End at 90s → selection
+        if(mainTimer <= 0){
+          mainRunning = false;
+          openFinalSelection();
+        }
+      }
+
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    // Typing input handling
+    inputEl.addEventListener('input', ()=>{
+      if(!externalRunning) return;
+      const target = words[currentPhase];
+      const val = inputEl.value;
+      // live validation: must match prefix exactly (case-insensitive)
+      const okPrefix = target.toLowerCase().startsWith(val.toLowerCase());
+      if(!okPrefix){
+        // immediate fail on misspell
+        failTyping();
+        return;
+      }
+      if(val.length === target.length && val.toLowerCase() === target.toLowerCase()){
+        succeedTyping();
+      }
+    });
+
+    // Final selection
+    function openFinalSelection(){
+      finalOverlay.classList.add('show');
+      statusEl.textContent = "Final analysis — choose the infected heart";
+      // enable click on hearts
+      wraps.forEach(w=>{
+        w.addEventListener('click', onHeartPick);
+      });
+      // number keys 1–5
+      window.addEventListener('keydown', onNumberPick);
+    }
+
+    function closeFinalSelection(){
+      finalOverlay.classList.remove('show');
+      wraps.forEach(w=>{
+        w.removeEventListener('click', onHeartPick);
+      });
+      window.removeEventListener('keydown', onNumberPick);
+    }
+
+    function onHeartPick(e){
+      const idx = parseInt(e.currentTarget.dataset.index,10);
+      evaluatePick(idx);
+    }
+    function onNumberPick(e){
+      const map = { 'Digit1':0, 'Digit2':1, 'Digit3':2, 'Digit4':3, 'Digit5':4 };
+      if(map.hasOwnProperty(e.code)){
+        evaluatePick(map[e.code]);
+      }
+    }
+
+    function evaluatePick(idx){
+      closeFinalSelection();
+      const success = (idx === infectedIndex);
+      endGame(success);
+    }
+
+    // Cutscene
+    function endGame(success){
+      if(gameEnded) return;
+      gameEnded = true;
+      cutscene.classList.add('show');
+      playCutscene(success);
+    }
+
+    function playCutscene(success){
+      cutsceneTitle.textContent = success ? "Transplant successful" : "Transplant failed";
+      cutsceneText.textContent = success ? "Stability rising… redirecting to next trial" : "Life support flatline… trial failed";
+
+      // Draw simple scene: patient silhouette + heart + monitor line
+      const ctx = sceneCtx;
+      ctx.clearRect(0,0,sceneCanvas.width,sceneCanvas.height);
+
+      // Patient silhouette
+      ctx.fillStyle = "#111";
+      ctx.fillRect(80,60,160,180);
+
+      // Heart icon
+      ctx.fillStyle = success ? "#00ff88" : "#ff3333";
+      ctx.beginPath();
+      ctx.arc(160,140,20,0,Math.PI*2);
+      ctx.fill();
+
+      // Monitor line animation
+      let t = 0;
+      function drawMonitor(){
+        ctx.fillStyle = "#050505";
+        ctx.fillRect(260,60,300,180);
+        ctx.strokeStyle = success ? "#00ff88" : "#ff3333";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(270,150);
+        for(let x=270; x<=540; x+=4){
+          const y = success
+            ? 150 + Math.sin((x+t)/20)*20
+            : 150 + (x<360 ? Math.sin((x+t)/20)*10 : 0); // flat after midpoint
+          ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      }
+
+      function animate(){
+        t += 2;
+        drawMonitor();
+        if(success){
+          requestAnimationFrame(animate);
+        } else {
+          // hold final frame for failure
+        }
+      }
+      animate();
+
+      // Redirect logic
+      if(success){
+        setTimeout(()=>{ window.location.href = "trial4.html"; }, 3000);
+      } else {
+        // stay; optionally allow retry or return
+      }
+    }
+
+    // Initialize: lock all hearts, start first typing phase immediately
+    lockAllHearts();
+    // Force first typing phase at start
+    beginTypingPhase();
+  </script>
+</body>
+</html>

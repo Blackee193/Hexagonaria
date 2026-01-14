@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trial of Memory</title>
+  <style>
+    :root {
+      --bg: #0e0f12;
+      --fg: #e8e8ea;
+      --muted: #b7b7bd;
+      --green: #2ee66b;
+      --red: #ff4d5a;
+      --blue: #4da3ff;
+      --accent: #f6c76e;
+    }
+    html, body {
+      background: radial-gradient(1200px 600px at 50% -200px, #1a1c22 0%, var(--bg) 60%);
+      color: var(--fg);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      margin: 0;
+      height: 100%;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+      text-align: center;
+    }
+    .title {
+      font-size: 28px;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+    .panel {
+      border: 1px solid #2a2d36;
+      background: #14161b;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .cutscene, .word, .input, .final {
+      display: none;
+    }
+    .cutscene-line {
+      font-size: 20px;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 400ms ease;
+      min-height: 32px;
+    }
+    .legend {
+      display: inline-flex;
+      gap: 16px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .legend .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .timer {
+      margin-top: 12px;
+      color: var(--accent);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .letters {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px 2px;
+    }
+    .letter {
+      font-weight: 700;
+      font-size: 28px;
+      padding: 0 2px;
+      text-shadow: 0 0 8px rgba(255,255,255,0.08);
+    }
+    .green { color: var(--green); }
+    .red   { color: var(--red); }
+    .blue  { color: var(--blue); }
+
+    .input-field {
+      width: 100%;
+      max-width: 720px;
+      font-size: 18px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #2a2d36;
+      background: #0f1116;
+      color: var(--fg);
+      outline: none;
+      margin-top: 16px;
+    }
+    .btn {
+      margin-top: 14px;
+      padding: 10px 18px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #2a2d36;
+      background: #171a21;
+      color: var(--fg);
+      cursor: pointer;
+    }
+    .btn:hover { background: #1b1f27; }
+    .lives {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .status {
+      margin-top: 8px;
+      min-height: 22px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .final h2 {
+      font-size: 24px;
+      margin: 0 0 8px;
+    }
+    .final p {
+      color: var(--muted);
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">Trial of Memory</div>
+    <div class="subtitle">Green—type as is • Red—replace with 0 • Blue—type twice</div>
+
+    <div id="panel" class="panel">
+      <!-- Cutscene -->
+      <div id="cutscene" class="cutscene">
+        <div id="cutLine" class="cutscene-line"></div>
+        <div class="legend">
+          <span><span class="dot" style="background: var(--green)"></span>Green: type normally</span>
+          <span><span class="dot" style="background: var(--red)"></span>Red: replace with 0</span>
+          <span><span class="dot" style="background: var(--blue)"></span>Blue: type twice</span>
+        </div>
+      </div>
+
+      <!-- Word display -->
+      <div id="wordPhase" class="word">
+        <div id="wordTitle" class="subtitle"></div>
+        <div id="timer" class="timer"></div>
+        <div id="letters" class="letters"></div>
+      </div>
+
+      <!-- Input phase -->
+      <div id="inputPhase" class="input">
+        <div id="prompt" class="subtitle">Type the transformed word (no timer)</div>
+        <input id="inputField" class="input-field" type="text" autocomplete="off" spellcheck="false" />
+        <button id="submitBtn" class="btn">Submit</button>
+        <div id="lives" class="lives"></div>
+        <div id="status" class="status"></div>
+      </div>
+
+      <!-- Final cutscene -->
+      <div id="final" class="final">
+        <h2 id="finalTitle"></h2>
+        <p id="finalText"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Words for the trial
+    const words = [
+      "Antixerophthalmic",
+      "Enneacontakaienneagon",
+      "Pyrrolizidinealkaloidosis"
+    ];
+
+    // State
+    let lives = 2;
+    let idx = 0;
+    let currentColors = [];
+    let transformedTarget = "";
+    let memInterval = null;
+    let memRemaining = 45;
+
+    // Elements
+    const cutsceneEl = document.getElementById("cutscene");
+    const cutLineEl = document.getElementById("cutLine");
+    const wordPhaseEl = document.getElementById("wordPhase");
+    const wordTitleEl = document.getElementById("wordTitle");
+    const timerEl = document.getElementById("timer");
+    const lettersEl = document.getElementById("letters");
+    const inputPhaseEl = document.getElementById("inputPhase");
+    const inputFieldEl = document.getElementById("inputField");
+    const submitBtnEl = document.getElementById("submitBtn");
+    const livesEl = document.getElementById("lives");
+    const statusEl = document.getElementById("status");
+    const finalEl = document.getElementById("final");
+    const finalTitleEl = document.getElementById("finalTitle");
+    const finalTextEl = document.getElementById("finalText");
+
+    // Cutscene lines (15s total, ~2s per line)
+    const cutsceneLines = [
+      "In this trial, memory itself is tested…",
+      "Three words will appear, each marked in colors.",
+      "Green letters — type them as they are.",
+      "Red letters — leave a space with 0.",
+      "Blue letters — type the letter twice.",
+      "You will have 45 seconds to memorize each word.",
+      "Then the word vanishes, and you must recall it transformed.",
+      "Survive all three to ascend. Fail, and memory collapses."
+    ];
+
+    function showCutscene() {
+      cutsceneEl.style.display = "block";
+      let i = 0;
+      function next() {
+        if (i < cutsceneLines.length) {
+          cutLineEl.style.opacity = 0;
+          setTimeout(() => {
+            cutLineEl.textContent = cutsceneLines[i++];
+            cutLineEl.style.opacity = 1;
+          }, 200);
+          setTimeout(next, 1800);
+        } else {
+          cutsceneEl.style.display = "none";
+          startWordPhase();
+        }
+      }
+      next();
+    }
+
+    // Generate a color map for a word ensuring at least one of each color if possible
+    function generateColorMap(word) {
+      const len = word.length;
+      const colors = new Array(len);
+      // Base random assignment
+      for (let i = 0; i < len; i++) {
+        const r = Math.random();
+        colors[i] = r < 0.5 ? "green" : (r < 0.75 ? "red" : "blue");
+      }
+      // Ensure presence of each color when length allows
+      const ensure = (color) => colors.some(c => c === color);
+      const indices = [...Array(len).keys()];
+      if (!ensure("green")) colors[indices[Math.floor(Math.random()*len)]] = "green";
+      if (!ensure("red") && len >= 2) colors[indices[Math.floor(Math.random()*len)]] = "red";
+      if (!ensure("blue") && len >= 3) colors[indices[Math.floor(Math.random()*len)]] = "blue";
+      return colors;
+    }
+
+    function buildTransformed(word, colors) {
+      let out = "";
+      for (let i = 0; i < word.length; i++) {
+        const ch = word[i];
+        const col = colors[i];
+        if (col === "green") out += ch;
+        else if (col === "red") out += "0";
+        else if (col === "blue") out += ch + ch;
+      }
+      return out;
+    }
+
+    function renderColoredWord(word, colors) {
+      lettersEl.innerHTML = "";
+      for (let i = 0; i < word.length; i++) {
+        const span = document.createElement("span");
+        span.className = `letter ${colors[i]}`;
+        span.textContent = word[i];
+        lettersEl.appendChild(span);
+      }
+    }
+
+    function startWordPhase() {
+      const word = words[idx];
+      currentColors = generateColorMap(word);
+      transformedTarget = buildTransformed(word, currentColors);
+
+      wordTitleEl.textContent = `Word ${idx+1} of 3`;
+      renderColoredWord(word, currentColors);
+      memRemaining = 45;
+      timerEl.textContent = `Memorize: ${memRemaining}s`;
+      wordPhaseEl.style.display = "block";
+
+      memInterval = setInterval(() => {
+        memRemaining--;
+        timerEl.textContent = `Memorize: ${memRemaining}s`;
+        if (memRemaining <= 0) {
+          clearInterval(memInterval);
+          wordPhaseEl.style.display = "none";
+          startInputPhase();
+        }
+      }, 1000);
+    }
+
+    function startInputPhase() {
+      inputFieldEl.value = "";
+      inputPhaseEl.style.display = "block";
+      livesEl.textContent = `Lives: ${lives}`;
+      statusEl.textContent = "";
+      inputFieldEl.focus();
+    }
+
+    submitBtn.addEventListener("click", () => {
+  const val = inputFieldEl.value.trim();
+    const secretCode = "Memorizalintazation";
+
+if (val === secretCode) {
+  const revealDiv = document.createElement("div");
+  revealDiv.style.marginTop = "20px";
+  const word = words[idx];          // use current word index
+  const colors = currentColors;     // use the active color map
+  for (let i = 0; i < word.length; i++) {
+    const span = document.createElement("span");
+    span.className = `letter ${colors[i]}`;
+    span.textContent = word[i];
+    revealDiv.appendChild(span);
+  }
+  inputPhaseEl.appendChild(revealDiv);
+  statusEl.textContent = "Secret glyph activated — the word is revealed!";
+  return; // stop here so it doesn’t consume a life
+}
+
+
+  // Normal validation
+  if (val === transformedTarget) {
+    inputPhaseEl.style.display = "none";
+    idx++;
+    if (idx < words.length) {
+      startWordPhase();
+    } else {
+      showFinal(true);
+    }
+  } else {
+    lives--;
+    livesEl.textContent = `Lives: ${lives}`;
+    statusEl.textContent = "Incorrect transformation. Try again.";
+    if (lives <= 0) {
+      inputPhaseEl.style.display = "none";
+      showFinal(false);
+    }
+  }
+});
+    function showFinalCutscene(success) {
+  inputPhaseDiv.style.display = "none";
+  finalCutsceneDiv.style.display = "block";
+  if (success) {
+    finalCutsceneDiv.innerText = "The glyphs align. Memory triumphs. You ascend.";
+  } else {
+    finalCutsceneDiv.innerText = "The glyphs scatter. Memory collapses. You fall.";
+  }
+
+  // Redirect after a short pause (e.g. 3 seconds)
+  setTimeout(() => {
+    window.location.href = "theend.html";
+  }, 3000);
+}
+    
+
+    // Begin
+    showCutscene();
+  </script>
+</body>
+</html>
